@@ -39,7 +39,10 @@ fun CoinListScreen(
             items(state.coins) { coin ->
                 CoinListItem(
                     coin = coin,
-                    onItemClick = { navController.navigate(Screen.CoinDetailScreen.route + "/${coin.id}") })
+                    onItemClick = {
+                        navController.navigate(Screen.CoinDetailScreen.route + "/${coin.id}")
+                    }
+                )
             }
         }
         if (state.error.isNotBlank()) {
@@ -71,7 +74,8 @@ fun CoinListItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onItemClick(coin) }
-            .padding(16.dp)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
             text = "${coin.rank}. ${coin.name} (${coin.symbol})",

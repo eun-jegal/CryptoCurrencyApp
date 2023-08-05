@@ -11,13 +11,14 @@ import com.example.cryptocurrencyapp.domain.usecases.GetCoinDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class CoinDetailViewModel @Inject constructor(
     private val getCoinDetailUseCase: GetCoinDetailUseCase,
     savedStateHandle: SavedStateHandle
-): ViewModel() {
+) : ViewModel() {
 
     private val _state = mutableStateOf(CoinDetailState())
     val state: State<CoinDetailState> = _state
@@ -29,19 +30,16 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     private fun getCoinDetail(id: String) {
-        getCoinDetailUseCase(id).onEach { result ->
-            when (result) {
-                is Resource.Success -> {
-                    _state.value = CoinDetailState(coin = result.data)
-                }
-                is Resource.Error -> {
-                    _state.value =
-                        CoinDetailState(error = result.message ?: "An unexpected error occurred")
-                }
-                is Resource.Loading -> {
-                    _state.value = CoinDetailState(isLoading = true)
+        viewModelScope.launch {
+            getCoinDetailUseCase(id).collect { result ->
+                _state.value = when (result) {
+                    is Resource.Success -> CoinDetailState(coin = result.data)
+                    is Resource.Error -> CoinDetailState(
+                        error = result.message ?: "An unexpected error occurred"
+                    )
+                    is Resource.Loading -> CoinDetailState(isLoading = true)
                 }
             }
-        }.launchIn(viewModelScope)
+        }
     }
 }

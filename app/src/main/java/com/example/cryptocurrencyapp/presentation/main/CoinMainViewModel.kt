@@ -7,8 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.cryptocurrencyapp.common.Resource
 import com.example.cryptocurrencyapp.domain.usecases.GetCoinsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,19 +23,16 @@ class CoinMainViewModel @Inject constructor(
     }
 
     private fun getCoins() {
-        getCoinsUseCase().onEach { result ->
-            when (result) {
-                is Resource.Success -> {
-                    _state.value = CoinListState(coins = result.data ?: emptyList())
-                }
-                is Resource.Error -> {
-                    _state.value =
-                        CoinListState(error = result.message ?: "An unexpected error occurred")
-                }
-                is Resource.Loading -> {
-                    _state.value = CoinListState(isLoading = true)
+        viewModelScope.launch {
+            getCoinsUseCase().collect { result ->
+                _state.value = when (result) {
+                    is Resource.Success -> CoinListState(coins = result.data ?: emptyList())
+                    is Resource.Error -> CoinListState(
+                        error = result.message ?: "An unexpected error occurred"
+                    )
+                    is Resource.Loading -> CoinListState(isLoading = true)
                 }
             }
-        }.launchIn(viewModelScope)
+        }
     }
 }
